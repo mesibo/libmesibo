@@ -149,6 +149,7 @@ class IMesibo {
 		virtual void reconnect_now(int type) = 0;
 		
 		virtual void set_debug(int loglevl, uint32_t debugflags) = 0;
+		virtual void set_loginflags(uint32_t flags) = 0;
 
 		virtual void set_uniqid(uint32_t uniqid) = 0;
 		virtual int set_device(uint8_t type, const char *deviceid, const char *package, const char *version) = 0;
@@ -156,6 +157,7 @@ class IMesibo {
 		virtual int set_credentials(const char *cookie) = 0;
 		virtual int set_notify(uint8_t channel, INotify *i, int setdefault) = 0;
 		virtual void set_appstore(int storeid, const char *store) = 0;
+		virtual void set_pushtoken(const char *token) = 0;
 		virtual int set_bufferlen(int len, int empty) = 0;
 		virtual int set_network(uint8_t type, uint32_t ipaddr, uint32_t gwaddr, uint16_t lastport) = 0;
 		
