@@ -20,7 +20,7 @@
 
 install_mesibo_linux() {
   echo "installing libmesibo on linux"
-  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/linux/libmesibo64.so -o /usr/lib/libmesibo64.so
+  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/linux/libmesibo.so -o /usr/lib/libmesibo.so
   curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/include/mesibo.h -o /usr/include/mesibo.h
   ldconfig
   echo "Installed libmesibo"
