@@ -46,6 +46,9 @@ case $(uname -s) in
       sorry "Mac OS without homebrew or MacPorts"
     fi
     ;;
+  *[Rr]aspberry*)
+    echo "Detected Raspberry Pi"
+    ;;
   *)
     if [ -f /etc/debian_version ]; then
       # Debian Linux
