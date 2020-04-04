@@ -1,4 +1,5 @@
 #pragma once
+#include <inttyes.h>
 
 typedef struct _tMessageParams {
 	uint64_t id;
