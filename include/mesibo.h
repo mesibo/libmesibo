@@ -1,4 +1,9 @@
 #pragma once
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#define __STDC_LIMIT_MACROS
+#endif
+#include <stdio.h>
 #include <inttypes.h>
 
 typedef struct _tMessageParams {
@@ -139,6 +144,7 @@ class IMesibo {
 		virtual ~IMesibo() {}
 
 		virtual int start() = 0;
+		virtual int wait() = 0;
 		virtual int stop() = 0;
 	
 		virtual void reconnect_now(int type) = 0;
@@ -152,7 +158,7 @@ class IMesibo {
 		virtual int set_credentials(const char *cookie) = 0;
 		virtual int set_notify(uint8_t channel, INotify *i, int setdefault) = 0;
 		virtual void set_appstore(int storeid, const char *store) = 0;
-		virtual void set_pushtoken(const char *token) = 0;
+		virtual void set_pushtoken(const char *token, int type) = 0;
 		virtual int set_bufferlen(int len, int empty) = 0;
 		virtual int set_network(uint8_t type, uint32_t ipaddr, uint32_t gwaddr, uint16_t lastport) = 0;
 		
