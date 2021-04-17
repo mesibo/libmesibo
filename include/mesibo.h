@@ -6,21 +6,31 @@
 #include <stdio.h>
 #include <inttypes.h>
 
+// This is only 8 bit field so don't expand
+#define STATUS_FLAG_INPROGRESS	1
+#define STATUS_FLAG_HISTORY		2
+
 typedef struct _tMessageParams {
 	uint64_t id;
 	uint64_t refid;
+	uint64_t syncid;
+	uint64_t opaque;
 	uint32_t uid;
 	uint32_t groupid;
 	int32_t  expiry; //expiry could be negative
 	uint32_t flag;
 	uint64_t when;
 	uint64_t retaints;
+	uint64_t syncts;
 	uint32_t uflags;
+	uint32_t profilets;
 	uint16_t status;
 	uint16_t channel;
 	uint16_t type;
+	uint16_t count; // for sending sync request
 	uint8_t  origin;
 	uint8_t  saved;
+	uint8_t  status_flags;
 	//
 	char *thumbnail;
 	int 	tnlen;
@@ -73,6 +83,10 @@ typedef struct _tMessageBundle {
 #define MESIBO_USERFLAG_TEMPORARY       0x40
 #define MESIBO_USERFLAG_DELETED         0x80
 
+// sync is enabled by default
+#define MESIBO_USERFLAG_NOSYNC         	0x1000
+#define MESIBO_USERFLAG_FORCESYNC       0x2000
+
 // Local blocked - messages
 #define MESIBO_USERFLAG_LMBLOCKED           0x10000
 // Local blocked - group messages
@@ -90,22 +104,38 @@ typedef struct _tMessageBundle {
 #define MESIBO_USERFLAG_MARKED              0x1000000
 #define MESIBO_USERFLAG_PROFILEREQUESTED    0x2000000
 
+#define PROFILESYNC_DISABLED	0
+#define PROFILESYNC_SAVE	1
+#define PROFILESYNC_MESSAGES	2
+#define PROFILESYNC_ALWAYS	(PROFILESYNC_MESSAGES|PROFILESYNC_SAVE)
+
+typedef struct mesibo_data_s {
+	uint16_t type;
+	int len;
+	char *data;
+} mesibo_data_t;
+
 typedef struct _tContact {
+	uint32_t uid;
 	uint32_t groupid;
+	uint32_t profilets;
 	uint64_t ts;
 	uint64_t lastseen;
 	uint32_t flag;
+	int32_t syncing; // if set, the data is from the server
 
-	const char *name;
-	const char *address;
-	const char *photo;
-	const char *other;
+	//only for self profile
+	uint16_t visibility;
+	uint16_t synctype;
 
-	const char *status;
-	int  statuslen;
-
-	const char *tn;
-	int  tnlen;
+	mesibo_data_t name;
+	mesibo_data_t lname;
+	mesibo_data_t address;
+	mesibo_data_t status;
+	mesibo_data_t info;
+	mesibo_data_t photo;
+	mesibo_data_t other;
+	mesibo_data_t tn;
 } tContact;
 
 class INotify {
@@ -114,7 +144,10 @@ class INotify {
 		virtual int on_message(tMessageParams *p, const char *from, const char *data, uint32_t len) = 0;
 		virtual int on_messagebundle(tMessageParams *p, const char *from, tMessageBundle *m) = 0;
 		virtual int on_messagestatus(tMessageParams *p, const char *from, int last) = 0;
+		virtual int on_messageinfo(uint64_t id, const char *from, uint64_t dts, uint64_t rts) = 0;
 		virtual int on_system_message(tMessageParams *p, const char *from, const char *data, uint32_t len) {return 0;}
+		virtual uint32_t on_uid_address_mapping(uint32_t uid, const char *address, char **addrout) {return 0;}
+		virtual int on_profile_updated(uint32_t uid, uint32_t ts, uint32_t oldts) {return 0;}
 		virtual int on_status(int status, uint32_t substatus, uint8_t channel, const char *from) = 0;
 		//TBD virtual int is_forground() = 0;
 		virtual int on_activity(tMessageParams *p, const char *from, uint32_t activity) = 0;
@@ -122,11 +155,15 @@ class INotify {
 		//virtual int on_file(tMessageParams *p, tMesiboAddress *from, uint32_t fileflag, int filesize, const char *url, const char *thumbnail, int tnlen, const char *title, const char *message, const char *launchurl, const char *localpath) = 0;
 		
 		//peerid is useful for group calling (anyone can call group - it will call all group members or if call in progress. can join)
-		virtual int on_call(uint32_t peerid, uint32_t callid, int status, const char *data, int datalen, uint64_t flags) = 0;
+		virtual int on_call(uint32_t peerid, uint32_t callid, int status, const char *data, int datalen, uint64_t flags, uint64_t info, uint64_t resolution, uint32_t bw) = 0;
+	
+		virtual int on_conf_participant(uint32_t uid, uint32_t sid, const char *address, const char *name, uint32_t role, uint32_t flags) = 0;
+		virtual int on_conf_call(uint32_t uid, uint32_t sid, int op, uint32_t resolution, int fps, uint32_t bw, uint32_t mflags, const char *sdp, const char *mid, int mline) = 0;
 		
 		virtual int on_contact(const tContact *c) = 0;
 		
 		virtual int on_key(const char *key, const char *value) = 0;
+		virtual void on_sync(void *rs, int count, uint32_t flags) {};
 		
 		virtual int on_server(int type, const char *server, const char *username, const char *password) = 0;
 };
@@ -138,6 +175,7 @@ class IMesiboDB {
 		virtual int read_pending(INotify *listener);
 };
 
+#define MESIBO_INTERFACE_VERSION 2
 
 class IMesibo {
 	public:
@@ -161,6 +199,8 @@ class IMesibo {
 		virtual void set_pushtoken(const char *token, int type) = 0;
 		virtual int set_bufferlen(int len, int empty) = 0;
 		virtual int set_network(uint8_t type, uint32_t ipaddr, uint32_t gwaddr, uint16_t lastport) = 0;
+		virtual void set_profilesync(uint8_t type) = 0;
+		virtual int get_profilesynctype() = 0;
 		
 		//virtual int send_readreceipt(uint64_t id) = 0;
 		//virtual int send_activity(uint8_t channel, const char *to, uint32_t type) = 0;
@@ -183,17 +223,22 @@ class IMesibo {
 		//client can use it during pause/resume
 		virtual void *set_readsession(void *data, uint32_t flag, const char *from, uint32_t groupid, const char *searchquery) = 0;
 		virtual int read(void *rs, int count) = 0;
+		virtual int sync(void *rs, int count) = 0;
 		virtual int delete_messages(uint64_t *ids, int count, int del_type) = 0;
 		virtual int delete_messages(uint64_t id, const char *from, uint32_t groupid, uint64_t ts) = 0;
 		virtual int delete_policy(int max_interval, int delete_type) = 0;
+		
+		virtual int get_message_info(uint64_t mid) = 0;
 
 		virtual int set_key(const char *key, const char *value) = 0;
 		virtual int delete_key(const char *key) = 0;
 		virtual int read_key(const char *key, char **value) = 0;
+		virtual int set_key64(const char *key, uint64_t val) = 0;
+		virtual uint64_t get_key64(const char *key, uint64_t defval) = 0;
 		virtual void free_keyvaluebuffer(char *value) = 0;
 		virtual int count_key(const char *key, const char *value) = 0;
 
-		virtual int set_contact(const tContact *c) = 0;
+		virtual int set_contact(tContact *c) = 0;
 		virtual int read_contact(const char *address, uint32_t groupid, const char *orderby, int count) = 0;
 		virtual int delete_contact(const char *address, uint32_t groupid) = 0;
 		
@@ -223,10 +268,10 @@ class IMesibo {
 		virtual int mute(int audio, int video, int enable) = 0;
 		virtual int hold(int enable) = 0;
 		virtual int set_pstn(const char *server, int port) = 0;
+		virtual int call_ack(int has_custom_iceserver) = 0;
+		virtual int call_send_info(uint64_t info, uint16_t width, uint16_t height) = 0;
 
 		virtual void set_callprocessing(int call_reject_status, int current_call_status) = 0;
-
-		virtual void set_answer_mode(int lateconnect) = 0;
 
 		virtual int mute_status() = 0;
 
@@ -235,6 +280,12 @@ class IMesibo {
 		virtual int callstatus_from_proxyrtc(int status, const char *sdp, int sdplen) = 0;
 		
 		virtual uint32_t get_uid() = 0;
+		virtual const char *get_address() = 0;
+		virtual uint32_t get_sysuser() = 0;
+		virtual int set_config(int type, uint32_t value, const char *svalue) = 0;
+		
+		//temporary
+		virtual int decode_field(const char *message, int msglen, uint8_t tlv_type, void **data) = 0;
 
 };
 
@@ -257,8 +308,15 @@ class CMesiboNotify: public INotify  {
 
 	virtual int on_file(tMessageParams *p, const char *from, uint32_t fileflag, int filesize, const char *url, const char *thumbnail, int tnlen, const char *title, const char *message, const char *launchurl, const char *localpath) { return 0; }
 
-	virtual int on_call(uint32_t peerid, uint32_t callid, int status, const char *data, int datalen, uint64_t flags) { return 0; }
+	virtual int on_call(uint32_t peerid, uint32_t callid, int status, const char *data, int datalen, uint64_t flags, uint64_t info, uint64_t resolution, uint32_t bw) { return 0; }
+		
+	virtual int on_conf_participant(uint32_t uid, uint32_t sid, const char *address, const char *name, uint32_t role, uint32_t flags) { return 0; }
 
+	// op, resolution (width, height), rate, bw, media flags, {sdp}
+	virtual int on_conf_call(uint32_t uid, uint32_t sid, int op, uint32_t resolution, int fps, uint32_t bw, uint32_t mflags, const char *sdp, const char *mid, int mline) {
+		return 0;
+	}
+	
 	virtual int on_key(const char *key, const char *value) { return 0; }
 
 	virtual int on_contact(const tContact *c) { return 0; }
@@ -268,5 +326,6 @@ class CMesiboNotify: public INotify  {
 	virtual int on_server(int type, const char *server, const char *username, const char *password) { return 0; }
 };
 
-extern "C" IMesibo *query_mesibo(const char *tempPath);
-extern "C" IMesibo *query_mesibo_base(const char *tempPath);
+extern "C" int query_mesibo_interface_version();
+extern "C" IMesibo *query_mesibo(const char *tempPath, uint32_t bufsize);
+extern "C" IMesibo *query_mesibo_base(const char *tempPath, uint32_t bufsize);
