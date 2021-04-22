@@ -85,7 +85,12 @@ typedef struct _tMessageBundle {
 
 // sync is enabled by default
 #define MESIBO_USERFLAG_NOSYNC         	0x1000
-#define MESIBO_USERFLAG_FORCESYNC       0x2000
+// by default saved contact is synced as a contact, set to disable
+#define MESIBO_USERFLAG_NOCONTACT         0x2000
+//prioritize local info, name is always prio
+#define MESIBO_USERFLAG_LOCALPRIO         0x4000
+// has server update
+#define MESIBO_USERFLAG_HASUPDATE         0x8000
 
 // Local blocked - messages
 #define MESIBO_USERFLAG_LMBLOCKED           0x10000
@@ -104,10 +109,21 @@ typedef struct _tMessageBundle {
 #define MESIBO_USERFLAG_MARKED              0x1000000
 #define MESIBO_USERFLAG_PROFILEREQUESTED    0x2000000
 
-#define PROFILESYNC_DISABLED	0
-#define PROFILESYNC_SAVE	1
-#define PROFILESYNC_MESSAGES	2
-#define PROFILESYNC_ALWAYS	(PROFILESYNC_MESSAGES|PROFILESYNC_SAVE)
+#define MESIBO_USERSAVE_NAME		1
+#define MESIBO_USERSAVE_STATUS		2
+#define MESIBO_USERSAVE_INFO		4
+#define MESIBO_USERSAVE_PHOTO		8
+#define MESIBO_USERSAVE_TN		0x10
+#define MESIBO_USERSAVE_OTHER		0x20
+#define MESIBO_USERSAVE_PICPATH		0x100
+#define MESIBO_USERSAVE_LOCALTN		0x200
+#define MESIBO_USERSAVE_LOCALMEMB	0x400
+#define MESIBO_USERSAVE_ALL		0xFFFFFFFF
+
+#define PROFILE_AUTOSYNC_DISABLED		0
+#define PROFILE_AUTOSYNC_MESSAGES		1
+#define PROFILE_AUTOSYNC_GROUPMESSAGES		2
+#define PROFILE_AUTOSYNC_ALWAYS			(PROFILE_AUTOSYNC_MESSAGES|PROFILE_AUTOSYNC_GROUPMESSAGES)
 
 typedef struct mesibo_data_s {
 	uint16_t type;
@@ -123,6 +139,7 @@ typedef struct _tContact {
 	uint64_t lastseen;
 	uint32_t flag;
 	int32_t syncing; // if set, the data is from the server
+	uint32_t savefields;
 
 	//only for self profile
 	uint16_t visibility;
@@ -136,6 +153,11 @@ typedef struct _tContact {
 	mesibo_data_t photo;
 	mesibo_data_t other;
 	mesibo_data_t tn;
+	
+	mesibo_data_t picpath;
+	mesibo_data_t localtn;
+	mesibo_data_t localmembers;
+
 } tContact;
 
 class INotify {
@@ -147,7 +169,7 @@ class INotify {
 		virtual int on_messageinfo(uint64_t id, const char *from, uint64_t dts, uint64_t rts) = 0;
 		virtual int on_system_message(tMessageParams *p, const char *from, const char *data, uint32_t len) {return 0;}
 		virtual uint32_t on_uid_address_mapping(uint32_t uid, const char *address, char **addrout) {return 0;}
-		virtual int on_profile_updated(uint32_t uid, uint32_t ts, uint32_t oldts) {return 0;}
+		virtual int on_profile_updated(uint32_t uid, uint32_t gid, uint32_t ts, uint32_t oldts) {return 0;}
 		virtual int on_status(int status, uint32_t substatus, uint8_t channel, const char *from) = 0;
 		//TBD virtual int is_forground() = 0;
 		virtual int on_activity(tMessageParams *p, const char *from, uint32_t activity) = 0;
@@ -239,8 +261,9 @@ class IMesibo {
 		virtual int count_key(const char *key, const char *value) = 0;
 
 		virtual int set_contact(tContact *c) = 0;
-		virtual int read_contact(const char *address, uint32_t groupid, const char *orderby, int count) = 0;
+		virtual int read_contact(const char *address, uint32_t groupid, int count) = 0;
 		virtual int delete_contact(const char *address, uint32_t groupid) = 0;
+		virtual int send_contact(const char *address, uint32_t groupid) = 0; 
 		
 		virtual int get_loginstatus() = 0;
 		virtual int get_mapimage_url(float lat, float lon, int width, int zoom, char *url) = 0;
