@@ -83,14 +83,16 @@ typedef struct _tMessageBundle {
 #define MESIBO_USERFLAG_TEMPORARY       0x40
 #define MESIBO_USERFLAG_DELETED         0x80
 
+// has server update or forcing self profile update
+#define MESIBO_USERFLAG_HASUPDATE         0x100
+#define MESIBO_USERFLAG_HASPROFILE         0x200
+
 // sync is enabled by default
 #define MESIBO_USERFLAG_NOSYNC         	0x1000
 // by default saved contact is synced as a contact, set to disable
 #define MESIBO_USERFLAG_NOCONTACT         0x2000
 //prioritize local info, name is always prio
 #define MESIBO_USERFLAG_LOCALPRIO         0x4000
-// has server update
-#define MESIBO_USERFLAG_HASUPDATE         0x8000
 
 // Local blocked - messages
 #define MESIBO_USERFLAG_LMBLOCKED           0x10000
@@ -303,6 +305,7 @@ class IMesibo {
 		virtual int callstatus_from_proxyrtc(int status, const char *sdp, int sdplen) = 0;
 		
 		virtual uint32_t get_uid() = 0;
+		virtual uint32_t get_uniqid() = 0;
 		virtual const char *get_address() = 0;
 		virtual uint32_t get_sysuser() = 0;
 		virtual int set_config(int type, uint32_t value, const char *svalue) = 0;
