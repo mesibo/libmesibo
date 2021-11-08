@@ -1,28 +1,3 @@
-## mesibo C++ API for Linux, Mac and Raspberry Pi
-
-mesibo offers high performance chat, group chat, call and conferencing APIs. It's modular, lightweight, and easy to integrate.
-
-mesibo supports almost all popular platforms and languages for you to quickly build your applications. Whether you are developing mobile apps (Android, iOS, Java, Objective-C, C++), web apps (Javascript), integrating with backend (Linux, macOS, Windows, Python, C++), or creating cool devices using Raspberry Pi, mesibo has APIs for you.
-
-mesibo's high-performance C++ library enables you to interface your chat clients with various scientific computing and machine learning systems on your backend like TensorFlow, Matlab, Octave, NumPy, etc to create a powerful chat experience.
-
-- **Website:** https://mesibo.com
-- **Documentation:** https://mesibo.com/documentation/
-- **Tutorials:** https://mesibo.com/documentation/tutorials/get-started
-
-### Supported Platforms
-Mesibo C++ API supports the following platforms.
-- CentOS / RedHat 7.x or above
-- Debian / Ubuntu
-- Mac OS (In Progress)
-- Raspberry Pi (In Progress)
-
-## Example
-Below are some examples of typical usage. 
-
-### Sending and Receiving Messages
-```cpp
-
 /* 
  * mesibo sample code for sending and receiving real-time messages in C++
  * 
@@ -136,10 +111,3 @@ int main() {
 	return 0;
 
 }
-```
-
-## Tutorial
-[Write your First mesibo Enabled Application](https://mesibo.com/documentation/tutorials/get-started/)
-
-## Support
-If you are facing issues, contact us at [https://mesibo.com/support/](https://mesibo.com/support/)
