@@ -37,7 +37,7 @@ install_mesibo_raspberry() {
 install_mesibo_osx() {
   echo "installing libmesibo on OSX"
   curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/osx/libmesibo.so -o /usr/local/lib/libmesibo.so
-  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/include/mesibo.h -o /usr/include/mesibo.h
+  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/include/mesibo.h -o /usr/local/include/mesibo.h
   echo "Installed libmesibo"
 }
 
