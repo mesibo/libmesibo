@@ -6,7 +6,7 @@
  * Once you download and install mesibo C++ library, you can compile this sample code by issuing 
  * the following command
  *
- * $ g++ mesibo.com -lmesibo -o mesibo_sample
+ * $ g++ mesibo.cpp -lmesibo -o mesibo_sample
  *
  * Execute it by
  *

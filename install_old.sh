@@ -34,13 +34,6 @@ install_mesibo_raspberry() {
   echo "Installed libmesibo"
 }
 
-install_mesibo_osx() {
-  echo "installing libmesibo on OSX"
-  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/osx/libmesibo.so -o /usr/local/lib/libmesibo.so
-  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/include/mesibo.h -o /usr/include/mesibo.h
-  echo "Installed libmesibo"
-}
-
 sorry() {
   echo "Sorry, I don't yet know how to install mesibo on $1"
   exit 1
@@ -52,6 +45,15 @@ case $(uname -a) in
     # Mac OS
     echo "Detected Mac OS"
     install_mesibo_osx
+    if type "brew" > /dev/null; then
+      echo "Installing libmesibo via homebrew"
+      brew install homebrew/science/mesibo
+    elif type "port" > /dev/null; then
+      echo "Installing libmesibo via MacPorts"
+      port install mesibo
+    else
+      sorry "Mac OS without homebrew or MacPorts"
+    fi
     ;;
   *[Rr]aspberry*)
     echo "Detected Raspberry Pi"
