@@ -39,8 +39,8 @@ install_mesibo_osx() {
   mkdir -p ~/Library/mesibo/include
   mkdir -p ~/Library/mesibo/lib/x86_64
   mkdir -p ~/Library/mesibo/lib/arm64
-  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/osx/x86_64/libmesibo.so -o ~/Library/mesibo/lib/x86_64/libmesibo.so
-  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/osx/arm64/libmesibo.so -o ~/Library/mesibo/lib/arm64/libmesibo.so
+  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/osx/x86_64/libmesibo.dylib -o ~/Library/mesibo/lib/x86_64/libmesibo.dylib
+  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/osx/arm64/libmesibo.dylib -o ~/Library/mesibo/lib/arm64/libmesibo.dylib
   curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/include/mesibo.h -o ~/Library/mesibo/include/mesibo.h
   echo "Installed libmesibo"
 }
