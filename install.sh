@@ -34,13 +34,13 @@ install_mesibo_raspberry() {
   echo "Installed libmesibo"
 }
 
-install_mesibo_osx() {
+install_mesibo_mac() {
   echo "installing libmesibo on OSX in ~/Library/mesibo"
   mkdir -p ~/Library/mesibo/include
   mkdir -p ~/Library/mesibo/lib/x86_64
   mkdir -p ~/Library/mesibo/lib/arm64
-  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/osx/x86_64/libmesibo.dylib -o ~/Library/mesibo/lib/x86_64/libmesibo.dylib
-  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/osx/arm64/libmesibo.dylib -o ~/Library/mesibo/lib/arm64/libmesibo.dylib
+  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/mac/x86_64/libmesibo.dylib -o ~/Library/mesibo/lib/x86_64/libmesibo.dylib
+  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/mac/arm64/libmesibo.dylib -o ~/Library/mesibo/lib/arm64/libmesibo.dylib
   curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/include/mesibo.h -o ~/Library/mesibo/include/mesibo.h
   echo "Installed libmesibo"
 }
@@ -55,7 +55,7 @@ case $(uname -a) in
   *[Dd]arwin*)
     # Mac OS
     echo "Detected Mac OS"
-    install_mesibo_osx
+    install_mesibo_mac
     ;;
   *[Rr]aspberry*)
     echo "Detected Raspberry Pi"
