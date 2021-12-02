@@ -8,7 +8,7 @@
 
 # Installs libmesibo on Mac or Linux.
 # Supported Platforms:
-# * Mac OS
+# * Mac OS (X84 & M1)
 # * Debian Linux
 #   * Debian 7, 8
 #   * Ubuntu 12.04, 14.04, 14.10, 15.04
@@ -19,7 +19,7 @@
 #   * Amazon Linux 2014.09
 
 install_mesibo_linux() {
-  echo "installing libmesibo on linux"
+  echo "installing libmesibo on linux in /usr/lib/"
   curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/linux/libmesibo.so -o /usr/lib/libmesibo.so
   curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/include/mesibo.h -o /usr/include/mesibo.h
   ldconfig
@@ -27,7 +27,7 @@ install_mesibo_linux() {
 }
 
 install_mesibo_raspberry() {
-  echo "installing libmesibo on Raspberry"
+  echo "installing libmesibo on Raspberry /usr/lib/"
   curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/raspberry/libmesibo.so -o /usr/lib/libmesibo.so
   curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/include/mesibo.h -o /usr/include/mesibo.h
   ldconfig
@@ -35,9 +35,13 @@ install_mesibo_raspberry() {
 }
 
 install_mesibo_osx() {
-  echo "installing libmesibo on OSX"
-  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/osx/libmesibo.so -o /usr/local/lib/libmesibo.so
-  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/include/mesibo.h -o /usr/local/include/mesibo.h
+  echo "installing libmesibo on OSX in ~/Library/mesibo"
+  mkdir -p ~/Library/mesibo/include
+  mkdir -p ~/Library/mesibo/lib/x86_64
+  mkdir -p ~/Library/mesibo/lib/arm64
+  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/osx/x86_64/libmesibo.so -o ~/Library/mesibo/lib/x86_64/libmesibo.so
+  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/osx/arm64/libmesibo.so -o ~/Library/mesibo/lib/arm64/libmesibo.so
+  curl -ks https://raw.githubusercontent.com/mesibo/libmesibo/master/include/mesibo.h -o ~/Library/mesibo/include/mesibo.h
   echo "Installed libmesibo"
 }
 
