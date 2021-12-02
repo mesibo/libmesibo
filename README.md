@@ -15,7 +15,7 @@ Mesibo C++ API supports the following platforms.
 - CentOS / RedHat 7.x or above
 - Debian / Ubuntu
 - Mac OS (x86 and M1 chip)
-- Raspberry Pi (In Progress)
+- Raspberry Pi 3 and 4
 
 ## Example
 Below are some examples of typical usage. 
