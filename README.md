@@ -14,7 +14,7 @@ mesibo's high-performance C++ library enables you to interface your chat clients
 Mesibo C++ API supports the following platforms.
 - CentOS / RedHat 7.x or above
 - Debian / Ubuntu
-- Mac OS (In Progress)
+- Mac OS (x86 and M1 chip)
 - Raspberry Pi (In Progress)
 
 ## Example
