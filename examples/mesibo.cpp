@@ -66,6 +66,9 @@ class SampleListener: public MesiboListener  {
 		ERRORLOG("===> Mesibo_onActivity: %x\n", activity);
 		return 0;
 	}
+
+	void Mesibo_onEndToEndEncryption(const char *address, int status) {
+	}
 };
 
 int main() {

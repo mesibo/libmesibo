@@ -12,11 +12,12 @@
 #define MESIBO_FLAG_READRECEIPT         0x2
 #define MESIBO_FLAG_TRANSIENT           0x4
 #define MESIBO_FLAG_PRESENCE           0x8
-#define MESIBO_FLAG_BROADCAST           0x20
+#define MESIBO_FLAG_FORWARDED           0x40
+#define MESIBO_FLAG_ENCRYPTED           0x80
 
-//#define MESIBO_FLAG_QUEUE            0x40000
-#define MESIBO_FLAG_NONBLOCKING         0x80000
 #define MESIBO_FLAG_DONTSEND            0x200000
+//#define MESIBO_FLAG_QUEUE            0x40000
+#define MESIBO_FLAG_BROADCAST           0x80000
 #define MESIBO_FLAG_LASTMESSAGE                 0x800000ULL
 #define MESIBO_FLAG_EORS                 0x4000000ULL
 
@@ -57,6 +58,9 @@
 #define MESIBO_MSGSTATUS_CALLINCOMING   0x16
 #define MESIBO_MSGSTATUS_CALLOUTGOING   0x17
 #define MESIBO_MSGSTATUS_CUSTOM         0x20
+#define MESIBO_MSGSTATUS_DELETED        0x21
+#define MESIBO_MSGSTATUS_WIPED         	0x22
+#define MESIBO_MSGSTATUS_E2E         	0x23
 
 // ONLY FOR UI USAGE
 #define MESIBO_MSGSTATUS_TIMESTAMP      0x30
@@ -67,6 +71,8 @@
 #define MESIBO_MSGSTATUS_INVALIDDEST    0x83
 #define MESIBO_MSGSTATUS_EXPIRED        0x84
 #define MESIBO_MSGSTATUS_BLOCKED        0x88
+#define MESIBO_MSGSTATUS_GROUPPAUSED    0x90
+#define MESIBO_MSGSTATUS_NOTMEMBER      0x91
 
 
 #define MESIBO_RESULT_OK                0
@@ -112,7 +118,15 @@
 #define MESIBO_ACTIVITY_JOINED          10
 #define MESIBO_ACTIVITY_LEFT            11
 
-
+#define MESIBO_RETRACT_MODIFY        1                                    
+#define MESIBO_RETRACT_WIPE          2                                    
+#define MESIBO_RETRACT_DELETE        4                                    
+#define MESIBO_RETRACT_DELUNREAD     0x10                                 
+#define MESIBO_RETRACT_DELREAD       0x20                                 
+#define MESIBO_RETRACT_DELMEDIA      0x40                                 
+#define MESIBO_RETRACT_DELTHREAD     0x80                                 
+#define MESIBO_RETRACT_DELALL        0x100                                
+#define MESIBO_RETRACT_DELCONTACT    0x1000                               
 
 // All status < 0x40 will keep call in progress - max status 0x7F (we can't go beyond that, as 0x80 will be treated as voice)
 #define MESIBO_CALLSTATUS_NONE                  0x00
@@ -151,6 +165,8 @@
 #define MESIBO_CALLSTATUS_NOCALLS               0x48
 #define MESIBO_CALLSTATUS_NOVIDEOCALLS          0x49
 #define MESIBO_CALLSTATUS_NOTALLOWED            0x4A
+#define MESIBO_CALLSTATUS_BLOCKED            	0x4B
+#define MESIBO_CALLSTATUS_DURATIONEXCEEDED            	0x4C
 
 //TringMe specific errir
 #define MESIBO_CALLSTATUS_AUTHFAIL              0x50
@@ -385,6 +401,7 @@ class MesiboListener {
 		virtual int Mesibo_onActivity(MesiboMessageParams *p, uint32_t activity, uint32_t value) = 0;
 		
 		virtual int Mesibo_onConnectionStatus(int status) = 0;
+		virtual void Mesibo_onEndToEndEncryption(const char *address, int status) = 0;
 };
 
 class MesiboReadSession {
@@ -405,7 +422,28 @@ class MesiboReadSession {
 		virtual void enableCalls(int enable)  = 0;
 };
 
-#define MESIBO_INTERFACE_VERSION	1
+class MesiboEndToEndEncryption {
+	public:
+		virtual ~MesiboEndToEndEncryption() {}
+		virtual void enable(int enable) = 0;
+		virtual int getStatus(const char *address) = 0;
+		virtual int isActive(const char *address) = 0;
+		virtual int setLevel(int level) = 0;
+		virtual int setCiphers(uint32_t supported, uint32_t preferred) = 0;
+		virtual int setPassword(const char *address, const char *password, int len) = 0;
+		virtual int setAuthenticationTaglen(int len) = 0;
+		virtual int setAuthenticationData(const char *address, const char *password, int len) = 0;
+		virtual int getPublicCertificate(const char *filename) = 0;
+		virtual int setPrivateCertificate(const char *filename) = 0;
+		virtual int setPeerCertificate(const char *address, const char *filename) = 0;
+		virtual const char *getPeerCertificateOrg(const char *address) = 0;
+		virtual const char *getPeerCertificateCommonName(const char *address) = 0;
+		virtual const char *getFingerprint(const char *address) = 0;
+		virtual const char *getUserFingerprint(const char *address) = 0;
+		virtual int setConfig(int level, uint32_t minops, uint32_t maxops, uint32_t mindur, uint32_t maxudr) = 0;
+};
+
+#define MESIBO_INTERFACE_VERSION	2
 class Mesibo {
 	public:
 		virtual ~Mesibo() {}
@@ -415,8 +453,14 @@ class Mesibo {
 		virtual int setDatabase(const char *dbNameWithPath, int resetTables) = 0;
 		virtual int resetDatabase(int tables) = 0;
 
+		virtual int backupDatabase(const char *path) = 0;
+		virtual int restoreDatabase(const char *path) = 0;
+
 		virtual void setSecureConnection(int enabled) = 0;
 		virtual int setAccessToken(const char *token) = 0;
+
+		virtual MesiboEndToEndEncryption *e2ee() = 0;
+
 		virtual void setOnlineStatusMode(int mode) = 0;
 		virtual void setUploadUrl(const char *url, const char *authToken) = 0;
 		virtual const char *getUploadUrl() = 0;
@@ -435,9 +479,19 @@ class Mesibo {
 		virtual int sendActivity(MesiboMessageParams *params, uint32_t mid, uint32_t activity, uint32_t value, int interval) = 0;
 		virtual int sendActivity(MesiboMessageParams *params, uint32_t mid, int activity, int interval) = 0;
 		virtual int setBufferLen(int len, int empty) = 0;
-		virtual int deleteMessages(uint64_t *mids, uint32_t count, int type) = 0;
-		virtual int deleteMessage(uint64_t mid, int type) = 0;
+
+		virtual int setMessageRetractionInterval(uint32_t interval) = 0;
+		virtual int getMessageRetractionInterval() = 0;
+		virtual void setRemoteRetractionPolicy(int policy) = 0;
+		
+		virtual int wipeMessages(uint64_t *mids, uint32_t count, int remote) = 0;
+		virtual int wipeMessage(uint64_t mid, int remote) = 0;
+		virtual int wipeMessage(uint64_t mid) = 0;
+
+		virtual int deleteMessages(uint64_t *mids, uint32_t count, int remote) = 0;
+		virtual int deleteMessage(uint64_t mid, int remote) = 0;
 		virtual int deleteMessage(uint64_t mid) = 0;
+
 		virtual int deleteMessages(const char *from, uint32_t groupid, uint32_t ts) = 0;
 		//virtual int createGroup(MesiboGroupProfile.GroupSettings gp, GroupListener listener) = 0;
 		//virtual int createGroup(const char *name, uint32_t flags, GroupListener listener) = 0;
@@ -461,6 +515,11 @@ class Mesibo {
 		virtual const char *version() = 0;
 		virtual int setConfig(uint32_t type, uint32_t value) = 0;
 		virtual int setConfig(uint32_t type, const char *value) = 0;
+		
+		virtual int isAccountSuspended() = 0;
+		virtual int isAccountPaid() = 0;
+		
+		//virtual void log(const char *string, ...) = 0;
 };
 
 extern "C" Mesibo *MesiboInstance(uint32_t bufsize);
