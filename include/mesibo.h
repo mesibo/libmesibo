@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <inttypes.h>
 
+#define MESIBO_INTERFACE_VERSION	3
+
 #define MESIBO_FLAG_DELIVERYRECEIPT     0x1
 #define MESIBO_FLAG_READRECEIPT         0x2
 #define MESIBO_FLAG_TRANSIENT           0x4
@@ -350,7 +352,8 @@ typedef struct _MesiboData {
 	uint32_t    len; 
 } MesiboData;
 
-typedef struct _MesiboMessageParams {
+class MesiboMessageProperties {
+	public:
 	uint64_t mid;
 	uint64_t refid;
 	uint64_t flags;
@@ -363,43 +366,158 @@ typedef struct _MesiboMessageParams {
 	uint8_t  origin;
 	uint8_t  status_flags;
 	const char *peer;
-} MesiboMessageParams;
 
-typedef struct _MesiboRichMessage {
-	
-	MesiboData data;
+	public:
+		virtual ~MesiboMessageProperties() {}
 
-	MesiboData message;
+		virtual void setType(int type) = 0;
+		virtual int getType() = 0;
+		virtual void setExpiry(int expiry) = 0;
+		virtual int getExpiry() = 0;
+		virtual void setStatus(int status) = 0;
+		virtual int getStatus() = 0;
+		// some of the function present in Android/iOS/Javascript are yet to be implented in C++ libraary
+		//virtual int getCurrentStatus() = 0;
+		//MesiboProfile getCurrentStatusSender() = 0;
+		//virtual void setAge(int age) = 0;
+		//virtual void setAgeAfterDelivered(int age) = 0;
+		//virtual void setAgeAfterRead(int age) = 0;
+		//virtual	uint32_t getAge() = 0;
+		//virtual void setThreadId(uint32_t tid) = 0;
+		//virtual	uint32_t getThreadId() = 0;
+		//virtual void setSensitivity(int val) = 0;
+		//virtual	long getSensitivity() = 0;
+		virtual void setInReplyTo(uint64_t messageid) = 0;
+		virtual	uint64_t getInReplyTo() = 0;
+		virtual int isReply() = 0;
+		virtual int isIncoming() = 0;
+		virtual int isSent() = 0;
+		virtual int isDelivered() = 0;
+		virtual int isReadByPeer() = 0;
+		virtual int isReadByUs() = 0;
+		virtual int isUnread() = 0;
+		virtual void markDeleted(int enable) = 0;
+		virtual void markWiped(int enable) = 0;
+		virtual int isDeleted() = 0;
+		virtual int isWiped() = 0;
+		virtual int isModified() = 0;
+		virtual int isModifiedByPeer() = 0;
+		virtual int isUpdated() = 0;
+		virtual int isDynamic() = 0;
+		virtual int isFileTransferFailed() = 0;
+		virtual int isForwarded() = 0;
+		virtual int isEndToEndEncrypted() = 0;
+		virtual int isEndToEndEncryptionStatus() = 0;
+		virtual int isPresence() = 0;
+		virtual int isRichMessage() = 0;
+		virtual int isPlainMessage() = 0;
+		virtual int isSavedMessage() = 0;
+		virtual int isCustom() = 0;
+		virtual int isDate() = 0;
+		virtual int isHeader() = 0;
+		virtual int isInvisible() = 0;
+		virtual int isMissedCall() = 0;
+		virtual int isIncomingCall() = 0;
+		virtual int isOutgoingCall() = 0;
+		virtual int isCall() = 0;
+		virtual int isVideoCall() = 0;
+		virtual int isVoiceCall() = 0;
+		virtual int isMessage() = 0;
+		virtual int isPstnCall() = 0;
+		virtual int getCallDuration() = 0;
+		virtual int isOutgoing() = 0;
+		virtual int isInOutbox() = 0;
+		virtual int isLastMessage() = 0;
+		virtual int isDbMessage() = 0;
+		virtual int isDbSummaryMessage() = 0;
+		virtual int isChatListMessage() = 0;
+		virtual int isRealtimeMessage() = 0;
+		virtual int isPendingMessage() = 0;
+		virtual int isGroupMessage() = 0;
+		virtual int isFailed() = 0;
+		virtual int compare(const char * peer, uint32_t groupid) = 0;
+		virtual int compare(MesiboMessageProperties *p) = 0;
+		virtual void setPeer(const char * peer) = 0;
+		virtual void setGroup(uint32_t groupid) = 0;
+		//virtual int isMessageStatusInProgress() = 0;
+		virtual void enableFlag(uint64_t f, int enable) = 0;
+		virtual void enableTransient(int enable) = 0;
+		virtual void enablePresence(int enable) = 0;
+		virtual void enableReadReceipt(int enable) = 0;
+		virtual void enableDeliveryReceipt(int enable) = 0;
+		virtual void enableCustom(int enable) = 0;
+		virtual void enableModify(int enable) = 0;
+		virtual void enableBroadcast(int enable) = 0;
+};
 
-	const char *title;
-	const char *actionurl;
+class MesiboMessage : public MesiboMessageProperties {
+	public:
 
-	struct {
-		uint8_t valid;
-		uint32_t size;
-		uint32_t type;
-		const char *url;
-		const char *path;
-		MesiboData thumbnail;
-		MesiboData thumbnail_s;
-	} file;
+		MesiboData data;
 
-	struct {
-		uint8_t valid;
-		uint32_t lat, lon;
-		double lat_d, lon_d;
-		uint64_t location;
-	} location;
+		const char *message;
+		const char *title;
+		const char *subtitle;
 
-} MesiboRichMessage;
+		struct {
+			uint8_t valid;
+			uint32_t size;
+			uint32_t type;
+			const char *url;
+			const char *path;
+			MesiboData thumbnail;
+		} file;
+
+		struct {
+			uint8_t valid;
+			double lat, lon;
+			uint64_t location;
+		} location;
+
+	public:
+		virtual ~MesiboMessage() {}
+
+		virtual int send(void) = 0;
+		virtual int resend() = 0;
+		virtual void setContent(const char *fileOrUrl) = 0;
+		virtual MesiboMessage *forward(const char *peer) = 0;
+		virtual MesiboMessage *forward(uint32_t gid) = 0;
+};
+
+class MesiboPresence  {
+	public:
+
+		uint32_t presence;	
+		uint32_t value;	
+		uint32_t interval;	
+		uint32_t expiry;	
+
+		uint32_t groupid;
+		const char *peer;
+
+	public:
+		virtual ~MesiboPresence() {}
+
+		virtual int send(void) = 0;
+		virtual int send(uint32_t presence) = 0;
+
+		virtual int sendTyping() = 0;
+		virtual int sendTypingCleared() = 0;
+		virtual int sendJoined() = 0;
+		virtual int sendChatting() = 0;
+		virtual int sendLeft() = 0;
+		virtual int sendOnline() = 0;
+		virtual int sendOffline() = 0;
+};
 
 class MesiboListener {
 	public:
-		virtual int Mesibo_onMessage(MesiboMessageParams *p, const char *data, uint32_t len) = 0;
-		virtual int Mesibo_onRichMessage(MesiboMessageParams *p, MesiboRichMessage *m) = 0;
-		virtual int Mesibo_onMessageStatus(MesiboMessageParams *p) = 0;
-		virtual int Mesibo_onActivity(MesiboMessageParams *p, uint32_t activity, uint32_t value) = 0;
-		
+		virtual int Mesibo_onMessage(MesiboMessage *m) = 0;
+		virtual int Mesibo_onMessageUpdate(MesiboMessage *m) = 0;
+		virtual int Mesibo_onMessageStatus(MesiboMessage *m) = 0;
+
+		virtual int Mesibo_onPresence(MesiboPresence *p) = 0;
+
 		virtual int Mesibo_onConnectionStatus(int status) = 0;
 		virtual void Mesibo_onEndToEndEncryption(const char *address, int status) = 0;
 };
@@ -443,7 +561,6 @@ class MesiboEndToEndEncryption {
 		virtual int setConfig(int level, uint32_t minops, uint32_t maxops, uint32_t mindur, uint32_t maxudr) = 0;
 };
 
-#define MESIBO_INTERFACE_VERSION	2
 class Mesibo {
 	public:
 		virtual ~Mesibo() {}
@@ -467,23 +584,20 @@ class Mesibo {
 		virtual const char *getUploadAuthToken() = 0;
 		virtual int addListener(MesiboListener *listener) = 0;
 		virtual uint64_t getTimestamp() = 0;
-		virtual int sendToWebhook(MesiboMessageParams *params, uint64_t mid, const char *msg, uint32_t len) = 0;
-		virtual int saveCustomMessage(MesiboMessageParams *params, uint64_t mid, const char *msg, uint32_t len) = 0;
-		virtual int addCustomMessage(MesiboMessageParams *params, uint64_t mid, const char *msg, uint32_t len) = 0;
-		virtual void sendMessages() = 0;
 		virtual int resend(uint64_t id) = 0;
-		virtual int forwardMessage(MesiboMessageParams *params, uint64_t mid, uint64_t forwardid) = 0;
-		virtual int sendMessage(MesiboMessageParams *params, uint64_t mid, const char *msg, uint32_t len) = 0;
-		//virtual int sendFile(MesiboMessageParams *params, uint32_t msgid, FileInfo file) = 0;
-		//virtual int sendFileURL(MesiboMessageParams *params, uint64_t id, const char *url, const char *thumbail, const char *title, const char *message, const char *launchurl) = 0;
-		virtual int sendActivity(MesiboMessageParams *params, uint32_t mid, uint32_t activity, uint32_t value, int interval) = 0;
-		virtual int sendActivity(MesiboMessageParams *params, uint32_t mid, int activity, int interval) = 0;
+		//virtual int forwardMessage(MesiboMessageProperties *params, uint64_t mid, uint64_t forwardid) = 0;
+		//virtual int sendMessage(MesiboMessageProperties *params, uint64_t mid, const char *msg, uint32_t len) = 0;
+		//virtual int sendFile(MesiboMessageProperties *params, uint32_t msgid, FileInfo file) = 0;
+		//virtual int sendFileURL(MesiboMessageProperties *params, uint64_t id, const char *url, const char *thumbail, const char *title, const char *message, const char *launchurl) = 0;
+		//		virtual int sendActivity(MesiboMessageProperties *params, uint32_t mid, uint32_t activity, uint32_t value, int interval) = 0;
+		//		virtual int sendActivity(MesiboMessageProperties *params, uint32_t mid, int activity, int interval) = 0;
+		virtual int sendPresence(const char *peer, uint32_t gid, uint32_t presence, uint32_t value, int interval) = 0; 
 		virtual int setBufferLen(int len, int empty) = 0;
 
 		virtual int setMessageRetractionInterval(uint32_t interval) = 0;
 		virtual int getMessageRetractionInterval() = 0;
 		virtual void setRemoteRetractionPolicy(int policy) = 0;
-		
+
 		virtual int wipeMessages(uint64_t *mids, uint32_t count, int remote) = 0;
 		virtual int wipeMessage(uint64_t mid, int remote) = 0;
 		virtual int wipeMessage(uint64_t mid) = 0;
@@ -507,6 +621,7 @@ class Mesibo {
 		virtual const char *getAddress() = 0;
 		virtual void setAppName(const char *name) = 0;
 		virtual uint32_t random() = 0;
+		virtual uint32_t getSenderMessageId(uint64_t mid) = 0;
 		virtual int setKey(const char *key, const char *value) = 0;
 		virtual const char *readKey(const char *key) = 0;
 		virtual int deleteKey(const char *key) = 0;
@@ -515,13 +630,18 @@ class Mesibo {
 		virtual const char *version() = 0;
 		virtual int setConfig(uint32_t type, uint32_t value) = 0;
 		virtual int setConfig(uint32_t type, const char *value) = 0;
-		
+
 		virtual int isAccountSuspended() = 0;
 		virtual int isAccountPaid() = 0;
-		
+
+		virtual MesiboMessage *newMessage(const char *to, uint32_t gid) = 0;
+		virtual MesiboPresence *newPresence(const char *to, uint32_t gid) = 0;
+
 		//virtual void log(const char *string, ...) = 0;
 };
 
+extern "C" void *MesiboInstanceInternal(const char *path, uint32_t bufsize);
 extern "C" Mesibo *MesiboInstance(uint32_t bufsize);
+extern "C" MesiboMessage *MesiboMessageInstance(const char *peer, uint32_t gid);
 extern "C" Mesibo *MesiboPythonInstance(uint32_t bufsize, const char *version);
 extern "C" int MesiboInterfaceVersion();
