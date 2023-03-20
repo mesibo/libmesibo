@@ -10,26 +10,6 @@
 
 #define MESIBO_INTERFACE_VERSION	3
 
-#define MESIBO_FLAG_DELIVERYRECEIPT     0x1
-#define MESIBO_FLAG_READRECEIPT         0x2
-#define MESIBO_FLAG_TRANSIENT           0x4
-#define MESIBO_FLAG_PRESENCE           0x8
-#define MESIBO_FLAG_FORWARDED           0x40
-#define MESIBO_FLAG_ENCRYPTED           0x80
-
-#define MESIBO_FLAG_DONTSEND            0x200000
-//#define MESIBO_FLAG_QUEUE            0x40000
-#define MESIBO_FLAG_BROADCAST           0x80000
-#define MESIBO_FLAG_LASTMESSAGE                 0x800000ULL
-#define MESIBO_FLAG_EORS                 0x4000000ULL
-
-#define MESIBO_FLAG_SAVECUSTOM                 (1ULL << 56)
-#define MESIBO_FLAG_FILETRANSFERRED     (1ULL << 58)
-#define MESIBO_FLAG_FILEFAILED          (1ULL << 59)
-
-
-#define MESIBO_FLAG_DEFAULT             (MESIBO_FLAG_DELIVERYRECEIPT | MESIBO_FLAG_READRECEIPT)
-
 #define MESIBO_FORMAT_DEFAULT           0
 #define MESIBO_FORMAT_HEX               1
 #define MESIBO_FORMAT_DECIMAL           2
@@ -79,21 +59,6 @@
 
 #define MESIBO_RESULT_OK                0
 #define MESIBO_RESULT_FAIL              0x80
-#define MESIBO_RESULT_GENERROR          0x81
-#define MESIBO_RESULT_NOSUCHERROR       0x83
-#define MESIBO_RESULT_INBOXFULL         0x84
-#define MESIBO_RESULT_BADREQ            0x85
-#define MESIBO_RESULT_OVERCAPACITY      0x86
-#define MESIBO_RESULT_RETRYLATER        0x87
-
-#define MESIBO_RESULT_TIMEOUT           0xB0
-#define MESIBO_RESULT_CONNECTFAIL       0xB1
-#define MESIBO_RESULT_DISCONNECTED      0xB2
-#define MESIBO_RESULT_REQINPROGRESS     0xB3
-#define MESIBO_RESULT_BUFFERFULL        0xB4
-
-#define MESIBO_RESULT_AUTHFAIL          0xC0
-#define MESIBO_RESULT_DENIED            0xC1
 
 #define MESIBO_ADDRESSSTRING_MAXLENGTH  63
 
@@ -103,14 +68,6 @@
 #define MESIBO_READFLAG_SUMMARY         0x10
 #define MESIBO_READFLAG_SENDEOR         0x20
 #define MESIBO_READFLAG_WITHFILES       0x80
-
-
-#define MESIBO_ORIGIN_REALTIME          0
-#define MESIBO_ORIGIN_DBMESSAGE         1
-#define MESIBO_ORIGIN_DBSUMMARY         2
-#define MESIBO_ORIGIN_DBPENDING         3
-#define MESIBO_ORIGIN_FILTER            4
-#define MESIBO_ORIGIN_MESSAGESTATUS     5
 
 #define MESIBO_ACTIVITY_NONE            0
 #define MESIBO_ACTIVITY_ONLINE          1
@@ -347,24 +304,53 @@
 #define MESIBO_GROUP_SUBSCRIBED                  10
 #define MESIBO_GROUP_PROVSUBSCRIBED              11
 
+#define MESIBO_DATATYPE_MESSAGE	0
+#define MESIBO_DATATYPE_BINARY	1
+
 typedef struct _MesiboData {
 	char *data; 
 	uint32_t    len; 
+	uint8_t type;
 } MesiboData;
+
+typedef struct _MesiboFle {
+	uint8_t    type; 
+	uint8_t    subtype; 
+	uint32_t   size; 
+	const char *name; 
+	const char *path; 
+	const char *url; 
+	const char *mimeType; 
+	
+	MesiboData thumbnail;
+} MesiboFile;
+
+class MesiboDateTime {
+	public:
+	uint64_t ts;
+	uint16_t daysElapsed;
+	uint16_t year;
+	uint8_t  month;
+	uint8_t  day;
+	uint8_t  hour;
+	uint8_t  min;
+	uint8_t  sec;
+
+	public:
+		virtual ~MesiboDateTime() {}
+
+		virtual int isValid() = 0;
+		virtual int setTimestamp(uint64_t ts) = 0;
+		virtual const char *getMonth() = 0;
+		virtual char *getDate(int monthFirst) = 0;
+		virtual char *getTime(int seconds) = 0;
+};
 
 class MesiboMessageProperties {
 	public:
 	uint64_t mid;
-	uint64_t refid;
-	uint64_t flags;
-	uint64_t ts;
-	int32_t  expiry; 
 	uint32_t uid;
 	uint32_t groupid;
-	uint16_t status;
-	uint16_t type;
-	uint8_t  origin;
-	uint8_t  status_flags;
 	const char *peer;
 
 	public:
@@ -448,40 +434,50 @@ class MesiboMessageProperties {
 		virtual void enableCustom(int enable) = 0;
 		virtual void enableModify(int enable) = 0;
 		virtual void enableBroadcast(int enable) = 0;
+		
+		virtual MesiboDateTime *getTimestamp() = 0;
+		virtual MesiboDateTime *getDeliveryTimestamp(const char *peer) = 0;
+		virtual MesiboDateTime *getReadTimestamp(const char *peer) = 0;
 };
 
 class MesiboMessage : public MesiboMessageProperties {
 	public:
-
-		MesiboData data;
-
-		const char *message;
-		const char *title;
-		const char *subtitle;
-
-		struct {
-			uint8_t valid;
-			uint32_t size;
-			uint32_t type;
-			const char *url;
-			const char *path;
-			MesiboData thumbnail;
-		} file;
-
-		struct {
-			uint8_t valid;
-			double lat, lon;
-			uint64_t location;
-		} location;
-
-	public:
 		virtual ~MesiboMessage() {}
+		
+		virtual void setMessage(const char *message) = 0;
+		virtual void setTitle(const char *title) = 0;
+		virtual void setSubtitle(const char *subtitle) = 0;
+		virtual void setData(MesiboData *data) = 0;
+		virtual void setContent(const char *fileOrUrl) = 0;
+		virtual void setContentType(int type) = 0;
+		virtual void setThumbnail(const char *tn, uint16_t len) = 0;
+
+		virtual void setLatitude(double latitude) = 0;
+		virtual void setLongitude(double longitude) = 0;
+		
+		virtual const char *getMessage() = 0;
+		virtual const char *getTitle() = 0;
+		virtual const char *getSubtitle() = 0;
+		virtual MesiboData *getData() = 0;
+
+		virtual const MesiboFile *getContent() = 0;
+
+		virtual double getLatitude() = 0;
+		virtual double getLongitude() = 0;
+
 
 		virtual int send(void) = 0;
 		virtual int resend() = 0;
-		virtual void setContent(const char *fileOrUrl) = 0;
 		virtual MesiboMessage *forward(const char *peer) = 0;
 		virtual MesiboMessage *forward(uint32_t gid) = 0;
+
+		virtual int deleteMessage() = 0;
+		virtual int wipe() = 0;
+	        virtual int recall() = 0;
+		virtual int wipeAndRecall() = 0;
+		virtual int mayBeRetracted() = 0;
+		
+		virtual void free() = 0;
 };
 
 class MesiboPresence  {
@@ -508,10 +504,20 @@ class MesiboPresence  {
 		virtual int sendLeft() = 0;
 		virtual int sendOnline() = 0;
 		virtual int sendOffline() = 0;
+
+		virtual int isRequest() = 0;
+		virtual int isOnline() = 0;
+		virtual int isOffline() = 0;
+		virtual int isTyping() = 0;
+		virtual int isTypingCleared() = 0;
+		virtual int isChatting() = 0;
+		virtual int hasJoined() = 0;
+		virtual int hasLeft() = 0;
 };
 
 class MesiboListener {
 	public:
+		virtual ~MesiboListener() {}
 		virtual int Mesibo_onMessage(MesiboMessage *m) = 0;
 		virtual int Mesibo_onMessageUpdate(MesiboMessage *m) = 0;
 		virtual int Mesibo_onMessageStatus(MesiboMessage *m) = 0;
@@ -565,7 +571,14 @@ class Mesibo {
 	public:
 		virtual ~Mesibo() {}
 		virtual int getConnectionStatus() = 0;
+		
 		virtual int setPath(const char *path) = 0;
+		virtual const char *getBasePath() = 0;
+		virtual const char *getDatabasePath() = 0;
+		virtual const char *getImagePath(int sent) = 0;
+		virtual const char *getVideoPath(int sent) = 0;
+		virtual const char *getAudioPath(int sent) = 0;
+		virtual const char *getDocumentPath(int sent) = 0;
 
 		virtual int setDatabase(const char *dbNameWithPath, int resetTables) = 0;
 		virtual int resetDatabase(int tables) = 0;
@@ -573,15 +586,12 @@ class Mesibo {
 		virtual int backupDatabase(const char *path) = 0;
 		virtual int restoreDatabase(const char *path) = 0;
 
-		virtual void setSecureConnection(int enabled) = 0;
 		virtual int setAccessToken(const char *token) = 0;
 
 		virtual MesiboEndToEndEncryption *e2ee() = 0;
 
 		virtual void setOnlineStatusMode(int mode) = 0;
 		virtual void setUploadUrl(const char *url, const char *authToken) = 0;
-		virtual const char *getUploadUrl() = 0;
-		virtual const char *getUploadAuthToken() = 0;
 		virtual int addListener(MesiboListener *listener) = 0;
 		virtual uint64_t getTimestamp() = 0;
 		virtual int resend(uint64_t id) = 0;
@@ -625,23 +635,30 @@ class Mesibo {
 		virtual int setKey(const char *key, const char *value) = 0;
 		virtual const char *readKey(const char *key) = 0;
 		virtual int deleteKey(const char *key) = 0;
-		virtual const char *getBasePath() = 0;
-		virtual const char *getFilePath(int type) = 0;
-		virtual const char *version() = 0;
 		virtual int setConfig(uint32_t type, uint32_t value) = 0;
 		virtual int setConfig(uint32_t type, const char *value) = 0;
 
 		virtual int isAccountSuspended() = 0;
 		virtual int isAccountPaid() = 0;
-
+		
 		virtual MesiboMessage *newMessage(const char *to, uint32_t gid) = 0;
+		virtual MesiboMessage *newMessage(const char *to) = 0;
+		virtual MesiboMessage *newMessage(uint32_t gid) = 0;
 		virtual MesiboPresence *newPresence(const char *to, uint32_t gid) = 0;
 
+		// Do not use following functions - they are used for code generation
+		virtual MesiboMessage *p_newMessage(const char *to) = 0;
+		virtual MesiboMessage *p_newGroupMessage(uint32_t gid) = 0;
+		virtual MesiboPresence *p_newPresence(const char *to) = 0;
+		virtual MesiboPresence *p_newGroupPresence(uint32_t gid) = 0;
 		//virtual void log(const char *string, ...) = 0;
+		
 };
+
 
 extern "C" void *MesiboInstanceInternal(const char *path, uint32_t bufsize);
 extern "C" Mesibo *MesiboInstance(uint32_t bufsize);
 extern "C" MesiboMessage *MesiboMessageInstance(const char *peer, uint32_t gid);
 extern "C" Mesibo *MesiboPythonInstance(uint32_t bufsize, const char *version);
 extern "C" int MesiboInterfaceVersion();
+extern "C" int MesiboIsUTF8(const char *data, uint32_t len);

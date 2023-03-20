@@ -32,7 +32,7 @@ Below are some examples of typical usage.
  * Once you download and install mesibo C++ library, you can compile this sample code by issuing 
  * the following command
  *
- * $ g++ mesibo.com -lmesibo -o mesibo_sample
+ * $ g++ mesibo.cpp -lmesibo -o mesibo_sample
  *
  * Execute it by
  *
@@ -63,33 +63,58 @@ class SampleListener: public MesiboListener  {
 		m_api = api;
 	}
 
-	int Mesibo_onMessage(MesiboMessageParams *p, const char *data, uint32_t len) {
-		int printlen = len;
-		if(printlen > 64)
-			printlen = 64;
+	void logMessage(MesiboMessage *msg, const char *func) {
+		MesiboDateTime *mt = msg->getTimestamp();
+		if(msg->isRichMessage())
+			ERRORLOG("===> %s: title %s message %s status %d (date: %s) (time: %s)\n", func, msg->getTitle(), msg->getMessage(), msg->getStatus(), mt->getDate(1), mt->getTime(1));
+		else {
+			MesiboData data;
+			msg->getData(&data);
+			ERRORLOG("===> %s: %.*s status: %d (date: %s) (time: %s)\n", func, data.len, data.data, msg->getStatus(), mt->getDate(1), mt->getTime(1));
+		}
+	}
 
-		ERRORLOG("===> Mesibo_onMessage: uid %u status %d type %u id %" PRIx64 " refid %lu groupid %u, when %" PRIu64 " from %s, flag: %x len %d: %.*s\n", p->uid, p->status, p->type, p->mid, p->refid, p->groupid, p->ts, p->peer, p->flags, len, printlen, data);
-
+	int Mesibo_onMessage(MesiboMessage *msg) {
+		logMessage(msg, "Mesibo_onMessage");
 		return 1;
 	}
 	
-	int Mesibo_onRichMessage(MesiboMessageParams *p, MesiboRichMessage *m) {
-		ERRORLOG("file url %s size %u lat %f long %f\n", m->file.url, m->file.size, m->location.lat_d, m->location.lon_d); 
-		return 0;
+	int Mesibo_onMessageUpdate(MesiboMessage *msg) {
+		logMessage(msg, "Mesibo_onMessageUpdate");
+		return 1;
 	}
-
-	int Mesibo_onMessageStatus(MesiboMessageParams *p)  {
-		ERRORLOG("===> Mesibo_onMessageStatus status %u id %u when %u ms (%u %u) from: %s\n", p->status, p->mid, m_api->getTimestamp()-p->ts, m_api->getTimestamp(), p->ts, p->peer?p->peer:"");
-		return 0;
+	
+	int Mesibo_onMessageStatus(MesiboMessage *msg) {
+		logMessage(msg, "Mesibo_onMessageStatus");
+		
+		MesiboDateTime *dt = msg->getDeliveryTimestamp(NULL);
+		MesiboDateTime *rt = msg->getReadTimestamp(NULL);
+		if(dt) ERRORLOG("===> Delivery (date: %s) (time: %s)\n", dt->getDate(1), dt->getTime(1));
+		if(rt) ERRORLOG("===> Read (date: %s) (time: %s)\n", rt->getDate(1), rt->getTime(1));
+		return 1;
 	}
-
+	
 	int Mesibo_onConnectionStatus(int status) {
 		ERRORLOG("===> Mesibo_onConnectionStatus: %u\n", status);
 		return 0;
 	}
 
-	int Mesibo_onActivity(MesiboMessageParams *p, uint32_t activity, uint32_t value) {
-		ERRORLOG("===> Mesibo_onActivity: %x\n", activity);
+	int Mesibo_onPresence(MesiboPresence *p) {
+		if(p->isTyping())
+			ERRORLOG("===> Mesibo_onPresence: is typing\n");
+		else if(p->isTypingCleared())
+			ERRORLOG("===> Mesibo_onPresence: not typing\n");
+		else if(p->isOnline())
+			ERRORLOG("===> Mesibo_onPresence: has come online\n");
+		else if(p->isOffline())
+			ERRORLOG("===> Mesibo_onPresence: is offline\n");
+		else if(p->hasJoined())
+			ERRORLOG("===> Mesibo_onPresence: has Joined\n");
+		else if(p->hasLeft())
+			ERRORLOG("===> Mesibo_onPresence: has Left\n");
+		else
+			ERRORLOG("===> Mesibo_onPresence: %x\n", p->presence);
+
 		return 0;
 	}
 
@@ -124,16 +149,13 @@ int main() {
 	fprintf(stderr, "Press Enter to send a message\n");
 	keypress();
 
-	MesiboMessageParams params;
-	memset(&params, 0, sizeof(MesiboMessageParams));
-	params.peer = "12345678";
-	params.expiry = 3600;
-	params.flags = MESIBO_FLAG_DEFAULT;
+	MesiboMessage *m = m_api->newMessage("919740305019");
+	m->setMessage("Hello from mesibo CPP library");
+	
+	fprintf(stderr, "sending\n");
+	m->send();
+	m->free();
 
-	const char *message = "Hello from mesibo CPP library";
-
-	int rv = m_api->sendMessage(&params, m_api->random(), message, strlen(message));
-	fprintf(stderr, "sent result %d\n", rv);
 
 	fprintf(stderr, "Waiting for messages. Press Enter to send a message\n");
 	keypress();
