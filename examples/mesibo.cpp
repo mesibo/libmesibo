@@ -42,9 +42,8 @@ class SampleListener: public MesiboListener  {
 		if(msg->isRichMessage())
 			ERRORLOG("===> %s: title %s message %s status %d (date: %s) (time: %s)\n", func, msg->getTitle(), msg->getMessage(), msg->getStatus(), mt->getDate(1), mt->getTime(1));
 		else {
-			MesiboData data;
-			msg->getData(&data);
-			ERRORLOG("===> %s: %.*s status: %d (date: %s) (time: %s)\n", func, data.len, data.data, msg->getStatus(), mt->getDate(1), mt->getTime(1));
+			MesiboData *data = msg->getData();
+			ERRORLOG("===> %s: %.*s status: %d (date: %s) (time: %s)\n", func, data->len, data->data, msg->getStatus(), mt->getDate(1), mt->getTime(1));
 		}
 	}
 
@@ -123,7 +122,7 @@ int main() {
 	fprintf(stderr, "Press Enter to send a message\n");
 	keypress();
 
-	MesiboMessage *m = m_api->newMessage("919740305019");
+	MesiboMessage *m = m_api->newMessage("18005551234");
 	m->setMessage("Hello from mesibo CPP library");
 	
 	fprintf(stderr, "sending\n");
