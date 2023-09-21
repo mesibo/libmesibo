@@ -652,13 +652,25 @@ class Mesibo {
 		virtual MesiboPresence *p_newPresence(const char *to) = 0;
 		virtual MesiboPresence *p_newGroupPresence(uint32_t gid) = 0;
 		//virtual void log(const char *string, ...) = 0;
+		//
+		//unread()
 		
 };
 
+#if defined(WINDOWS) || defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#ifdef MESIBO_BUILD
+#define DLL_SYMBOL __declspec(dllexport)
+#else
+#define DLL_SYMBOL __declspec(dllimport)
+#endif
+#else
+#define DLL_SYMBOL  
+#endif
 
-extern "C" void *MesiboInstanceInternal(const char *path, uint32_t bufsize);
-extern "C" Mesibo *MesiboInstance(uint32_t bufsize);
-extern "C" MesiboMessage *MesiboMessageInstance(const char *peer, uint32_t gid);
-extern "C" Mesibo *MesiboPythonInstance(uint32_t bufsize, const char *version);
-extern "C" int MesiboInterfaceVersion();
-extern "C" int MesiboIsUTF8(const char *data, uint32_t len);
+
+extern "C" DLL_SYMBOL void *MesiboInstanceInternal(const char *path, uint32_t bufsize);
+extern "C" DLL_SYMBOL Mesibo *MesiboInstance(uint32_t bufsize);
+extern "C" DLL_SYMBOL MesiboMessage *MesiboMessageInstance(const char *peer, uint32_t gid);
+extern "C" DLL_SYMBOL Mesibo *MesiboPythonInstance(uint32_t bufsize, const char *version, const char *pyversion);
+extern "C" DLL_SYMBOL int MesiboInterfaceVersion();
+extern "C" DLL_SYMBOL int MesiboIsUTF8(const char *data, uint32_t len);

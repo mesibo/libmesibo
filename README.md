@@ -1,4 +1,4 @@
-## mesibo C++ API for Linux, Mac and Raspberry Pi
+## mesibo C++ API for Linux, Mac, Windows and Raspberry Pi
 
 mesibo offers high performance end-to-end encrypted chat, group chat, call and conferencing APIs. It's modular, lightweight, and easy to integrate.
 
@@ -13,10 +13,13 @@ mesibo's high-performance C++ library enables you to interface your chat clients
 ### Supported Platforms
 Mesibo C++ API supports the following platforms.
 
-- CentOS / RedHat 7.x or above
+- RedHat 7.x or above (also, Rocky Linux, CentOS)
 - Ubuntu / Debian
-- Mac OS (x86 and M1 chip)
-- Raspberry Pi 3 and 4
+- Mac OS - both x86_64 and arm64 (M1) versions
+- Microsoft Windows 10 and above (64-bit)
+- Raspberry Pi 3 and 4 (64-bit)
+
+Note that, Mesibo is no longer supporting or offering 32-bit versions.
 
 ## Example
 Below are some examples of typical usage. 
