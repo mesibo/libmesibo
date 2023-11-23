@@ -24,7 +24,7 @@ int gDebugEnabled = 1;
  * https://mesibo.com/documentation/tutorials/first-app/ 
  */
 #define APP_TOKEN "<token>"
-#define APP_ID "com.mesibo.cpp"
+#define APP_ID "com.mesibo.firstapp"
 
 int keypress() {
 	return getchar();      
