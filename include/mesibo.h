@@ -640,7 +640,8 @@ class Mesibo {
 		virtual uint32_t getUid() = 0;
 		virtual const char *getAddress() = 0;
 		virtual void setAppName(const char *name) = 0;
-		virtual uint32_t random() = 0;
+		virtual uint32_t random() = 0; // depreciated, use getUniqueMessageId
+		virtual uint32_t getUniqueMessageId() = 0;
 		virtual uint32_t getSenderMessageId(uint64_t mid) = 0;
 		virtual int setKey(const char *key, const char *value) = 0;
 		virtual const char *readKey(const char *key) = 0;
