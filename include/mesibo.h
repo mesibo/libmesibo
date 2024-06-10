@@ -338,8 +338,8 @@ typedef struct _MesiboFle {
 class MesiboDateTime {
 	public:
 	uint64_t ts;
-	uint16_t daysElapsed;
 	uint16_t year;
+	uint8_t  wday;
 	uint8_t  month;
 	uint8_t  day;
 	uint8_t  hour;
@@ -639,7 +639,13 @@ class Mesibo {
 		virtual int wait() = 0;
 		virtual uint32_t getUid() = 0;
 		virtual const char *getAddress() = 0;
-		virtual void setAppName(const char *name) = 0;
+
+		//[[deprecated("You can now generate mesibo v2 tokens without providing an appid, making these APIs unnecessary.")]]
+		virtual void setAppName(const char *name) = 0; // depreciated, use setAppId
+		
+		//[[deprecated("You can now generate mesibo v2 tokens without providing an appid, making these APIs unnecessary.")]]
+		virtual void setAppId(const char *name) = 0;
+
 		virtual uint32_t random() = 0; // depreciated, use getUniqueMessageId
 		virtual uint32_t getUniqueMessageId() = 0;
 		virtual uint32_t getSenderMessageId(uint64_t mid) = 0;
