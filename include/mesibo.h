@@ -6,7 +6,7 @@
 *                                                                       *
 * mesibo website: https://mesibo.com                                    *
 *                                                                       *
-* Copyright ©2023 Mesibo. All rights reserved.                          *
+* Copyright ©2024 Mesibo. All rights reserved.                          *
 *************************************************************************/
 #pragma once
 
@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#define MESIBO_INTERFACE_VERSION	3
+#define MESIBO_INTERFACE_VERSION	4
 
 #define MESIBO_FORMAT_DEFAULT           0
 #define MESIBO_FORMAT_HEX               1
@@ -69,6 +69,9 @@
 
 #define MESIBO_RESULT_OK                0
 #define MESIBO_RESULT_FAIL              0x80
+#define MESIBO_RESULT_GENERROR          0x81
+#define MESIBO_RESULT_BADREQ            0x85
+#define MESIBO_RESULT_RATELIMIT      	0x8C
 
 #define MESIBO_ADDRESSSTRING_MAXLENGTH  63
 
