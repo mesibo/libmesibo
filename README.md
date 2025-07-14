@@ -152,7 +152,7 @@ int main() {
 	fprintf(stderr, "Press Enter to send a message\n");
 	keypress();
 
-	MesiboMessage *m = m_api->newMessage("919740305019");
+	MesiboMessage *m = m_api->newMessage("destination");
 	m->setMessage("Hello from mesibo CPP library");
 	
 	fprintf(stderr, "sending\n");
